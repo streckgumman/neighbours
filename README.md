@@ -1,4 +1,3 @@
-# neighbours
 
 
 import javafx.animation.AnimationTimer;
@@ -13,7 +12,6 @@ import javafx.stage.Stage;
 import java.util.Arrays;
 import java.util.Random;
 
-import static java.lang.Math.random;
 import static java.lang.Math.round;
 import static java.lang.Math.sqrt;
 import static java.lang.System.*;
@@ -42,17 +40,18 @@ public class Neighbours extends Application {
         NA     // Not applicable (NA), used for NONEs
     }
 
+    final static Random rand = new Random();
     // Below is the *only* accepted instance variable (i.e. variables outside any method)
     // This variable may *only* be used in methods init() and updateWorld()
     Actor[][] world;              // The world is a square matrix of Actors
+
     // This is the method called by the timer to update the world
     // (i.e move unsatisfied) approx each 1/60 sec.
     void updateWorld() {
         // % of surrounding neighbours that are like me
-        final double threshold = 0.7;
+        final double threshold = 0.5;
         // TODO
-
-
+        world = nextStateWorld(world, threshold);
     }
 
     // This method initializes the world variable with a random distribution of Actors
@@ -60,7 +59,7 @@ public class Neighbours extends Application {
     // Don't care about "@Override" and "public" (just accept for now)
     @Override
     public void init() {
-        test();    // <---------------- Uncomment to TEST!
+        //test();    // <---------------- Uncomment to TEST!
 
         // %-distribution of RED, BLUE and NONE
         double[] dist = {0.25, 0.25, 0.50};
@@ -68,11 +67,14 @@ public class Neighbours extends Application {
         int nLocations = 900;
 
         // TODO
-        //Actor[][] world = new Actor[getSize(nLocations)][getSize(nLocations)];
-
 
         // Should be last
+
+        world = setActors(0.25, 0.25, nLocations);
         fixScreenSize(nLocations);
+        world = randWorld(world);
+
+
     }
 
 
@@ -80,20 +82,21 @@ public class Neighbours extends Application {
 
     // TODO write the methods here, implement/test bottom up
 
-    Actor[][] setActors(double percRed, double percBlue, Actor[][] world, int location){
+    Actor[][] setActors(double percRed, double percBlue, int location) {
         Actor[][] worldColor = new Actor[getSize(location)][getSize(location)];
         int index = 0;
-        int nLocations = world.length * world.length;
-        for (int row = 0; row < world.length; row++){
-            index++;
-            for (int column = 0; column < world.length; column++){
-                index++;
+        int nLocations = worldColor.length * worldColor.length;
+        for (int row = 0; row < worldColor.length; row++) {
+            for (int column = 0; column < worldColor.length; column++) {
                 if (index < percBlue * nLocations) {
                     worldColor[row][column] = Actor.BLUE;
-                }else if (index >= percBlue * nLocations && index < (percRed + percBlue) * nLocations) {
+                    index++;
+                } else if (index >= percBlue * nLocations && index < (percRed + percBlue) * nLocations) {
                     worldColor[row][column] = Actor.RED;
-                }else{
+                    index++;
+                } else {
                     worldColor[row][column] = Actor.NONE;
+                    index++;
                 }
 
 
@@ -101,31 +104,226 @@ public class Neighbours extends Application {
         }
         return worldColor;
     }
-    int getSize(int nLocations){
+
+    int getSize(int nLocations) {
         return (int) Math.round(sqrt(nLocations));
     }
 
-    boolean checkSatisfaction(State){
-        if (State.SATISFIED.equals(true)){
-            return true;
-        } else if (State.UNSATISFIED.equals(true)){
-            return false;
+    Actor[][] randWorld(Actor[][] worldColor) {
+        Actor[][] temp = new Actor[1][1];
+        for (int row = 0; row < worldColor.length; row++) {
+            for (int column = 0; column < worldColor.length; column++) {
+                int randRow = Randomize();
+                int randCol = Randomize();
+                temp[0][0] = worldColor[row][column];
+                worldColor[row][column] = worldColor[randRow][randCol];
+                worldColor[randRow][randCol] = temp[0][0];
+
+            }
         }
-        return false;
+        return worldColor;
     }
 
 
-    Actor[][] randWorld(Actor[][] world){
-        for (int row = 0; row < world.length; row++) {
-            for (int column = 0; column < world.length; column++) {
-                if (checkSatisfaction(State) == false){
-                    random()
+    int Randomize() {
+        int randNum = rand.nextInt(world.length - 1);
+        return randNum;
+    }
+
+
+    boolean isValidLocation(Actor[][] world, int row, int col) {
+        int size = world.length;
+        return 0 <= row && row < size && 0 <= col && col < size;
+    }
+
+    int getSatisfaction(Actor[][] world, int row, int col) {          //hårig kod
+        int count = 0;
+        if (world[row][col] == Actor.RED) {
+            for (int r = row - 1; r <= row + 1; r++) {
+                for (int c = col - 1; c <= col + 1; c++) {
+                    if (isValidLocation(world, r, c) && !(r == row && c == col)) {
+                        if (world[r][c] == Actor.RED) {
+                            count++;
+                        }
+                    }
+                }
+            }
+
+        } else if (world[row][col] == Actor.BLUE) {
+            for (int r = row - 1; r <= row + 1; r++) {
+                for (int c = col - 1; c <= col + 1; c++) {
+                    if (isValidLocation(world, r, c) && !(r == row && c == col)) {
+                        if (world[r][c] == Actor.BLUE) {
+                            count++;
+                        }
+                    }
                 }
             }
         }
+        return count;
     }
 
 
+    int isOtherColor(Actor[][] world, int row, int col) {          //hårig kod
+    int count = 0;
+        if (world[row][col] == Actor.RED) {
+            for (int r = row - 1; r <= row + 1; r++) {
+                for (int c = col - 1; c <= col + 1; c++) {
+                    if (isValidLocation(world, r, c) && !(r == row && c == col)) {
+                        if (world[r][c] == Actor.BLUE) {
+                            count++;
+                        }
+                    }
+                }
+            }
+
+        } else if (world[row][col] == Actor.BLUE) {
+            for (int r = row - 1; r <= row + 1; r++) {
+                for (int c = col - 1; c <= col + 1; c++) {
+                    if (isValidLocation(world, r, c) && !(r == row && c == col)) {
+                        if (world[r][c] == Actor.RED) {
+                        count++;
+                        }
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+   /* boolean isActorNone(Actor[][] world, int row, int col) {
+        return world[row][col] == Actor.NONE;
+    }*/
+
+
+
+
+
+    Actor[][] nextStateWorld(Actor[][] world, double threshold){
+        int size = world.length;
+        Actor[][] newWorld = new Actor[size][size];
+        for (int r = 0; r < size; r++){
+            for (int c = 0; c < size; c++){
+                newWorld[r][c] = Actor.NONE;
+            }
+        }
+
+        //newWorld = world;
+        //Actor[][] newWorld = new Actor[size][size];
+        for (int row = 0; row < size; row++) {
+            for (int column = 0; column < size; column++) {
+                State newState = unSatisfied(world, row, column, threshold);
+                if (newState == State.SATISFIED) {
+                    newWorld[row][column] = world[row][column];
+                }
+            }
+        }
+        for (int row = 0; row < size; row++) {
+            for (int column = 0; column < size; column++) {
+                State newState = unSatisfied(world, row, column, threshold);
+                if (newState == State.UNSATISFIED) {
+                    for (; ; ) {
+                        int j = rand.nextInt(size);                     //MÅSTE GÖRA NY VÄRLD SOM TAR IN DE SATISFIED OCKSÅ
+                        int k = rand.nextInt(size);
+                        if (newWorld[j][k] == Actor.NONE) {
+
+                            newWorld[j][k] = world[row][column];
+
+                            break;
+                        }
+
+
+                    }
+
+                }
+            }
+
+        }
+
+        return newWorld;
+    }
+
+
+
+
+
+
+
+
+
+
+    /*State satisfaction(Actor[][] world, int row, int col, double threshold) {
+        double percSat = threshold * aroundYou(world, row ,col);
+        if (getSatisfaction(world, row, col) >= percSat || aroundNone(world, row, col)) || ifAllZero(world, row, col) >= percSat {
+            return State.SATISFIED;
+        } else if (getSatisfaction(world, row, col) < percSat) {
+            return State.UNSATISFIED;
+        }
+        else {
+            return State.NA;
+        }
+
+    }*/
+
+    State unSatisfied(Actor[][] world, int row, int col, double threshold){
+        double percSat = threshold * aroundYou(world, row, col);
+        State s = State.UNSATISFIED;
+        if (isOtherColor(world, row, col) > 0){
+            if (getSatisfaction(world, row, col) >= percSat){
+                s = State.SATISFIED;
+            }
+        }
+        else {
+            s = State.SATISFIED;
+        }
+        return s;
+    }
+
+
+
+    int aroundYou(Actor[][] world, int row, int col) {
+        int count = 0;
+        for (int r = row - 1; r <= row + 1; r++) {
+            for (int c = col - 1; c <= col + 1; c++) {
+                if (isValidLocation(world, r, c) && !(r == row && c == col)){
+                    count++;
+                }
+
+
+            }
+        }
+        return count;
+    }
+    int isAllNone(Actor[][] world, int row, int col) {
+        int count = 0;
+        for (int r = row - 1; r <= row + 1; r++) {
+            for (int c = col - 1; c <= col + 1; c++) {
+                if (isValidLocation(world, r, c) && !(r == row && c == col) && world[r][c] == Actor.NONE){
+                    count++;
+                }
+
+
+            }
+        }
+        return count;
+    }
+    boolean aroundNone(Actor[][] world, int row, int col){
+        return aroundYou(world, row, col) == isAllNone(world, row, col);
+    }
+
+    /*
+                                Satisfaction
+                                       |
+                  ....................................................
+                  |                 |                           |
+              enum state       getSatisfaction(int)         threshold
+                                        |
+                                   isValidLocation
+
+
+
+
+*/
 
 
     // ------- Testing -------------------------------------
@@ -135,19 +333,21 @@ public class Neighbours extends Application {
     void test() {
         // A small hard coded world for testing
         Actor[][] testWorld = new Actor[][]{
-                {Actor.RED, Actor.RED, Actor.NONE},
-                {Actor.NONE, Actor.BLUE, Actor.NONE},
+                {Actor.RED, Actor.NONE, Actor.NONE},
+                {Actor.NONE, Actor.NONE, Actor.NONE},
                 {Actor.RED, Actor.NONE, Actor.BLUE}
         };
         double th = 0.5;   // Simple threshold used for testing
-        int size = testWorld.length;
-        out.println(getSize(16));
-        Actor [][] world2 = setActors(0.25, 0.50, testWorld, 16);
-        out.println(Arrays.toString(world2[0]));
-        out.println(Arrays.toString(world2[1]));
-        out.println(Arrays.toString(world2[2]));
-        out.println(Arrays.toString(world2[3]));
+        //int size = testWorld.length;
+        //out.println(getSize(9));
+        //Actor [][] world2 = setActors(0.25, 0.25, 9);
+        //out.println(Arrays.toString(world2[0]));
+        //out.println(Arrays.toString(world2[1]));
+        //out.println(Arrays.toString(world2[2]));
+        //out.println(Arrays.toString(world2[3]));
         // TODO test methods
+        out.println(aroundNone(testWorld, 0, 0));
+        //out.println(aroundYou(testWorld, 1, 1));
 
         exit(0);
     }
@@ -155,6 +355,7 @@ public class Neighbours extends Application {
     // Helper method for testing (NOTE: reference equality)
     <T> int count(T[] arr, T toFind) {
         int count = 0;
+
         for (int i = 0; i < arr.length; i++) {
             if (arr[i] == toFind) {
                 count++;
@@ -168,7 +369,7 @@ public class Neighbours extends Application {
     double width = 400;   // Size for window
     double height = 400;
     long previousTime = nanoTime();
-    final long interval = 450000000;
+    final long interval = 950000000;
     double dotSize;
     final double margin = 50;
 
