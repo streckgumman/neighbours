@@ -49,7 +49,7 @@ public class Neighbours extends Application {
     // (i.e move unsatisfied) approx each 1/60 sec.
     void updateWorld() {
         // % of surrounding neighbours that are like me
-        final double threshold = 0.5;
+        final double threshold = 0.7;
         // TODO
         world = nextStateWorld(world, threshold);
     }
@@ -64,7 +64,7 @@ public class Neighbours extends Application {
         // %-distribution of RED, BLUE and NONE
         double[] dist = {0.25, 0.25, 0.50};
         // Number of locations (places) in world (square)
-        int nLocations = 900;
+        int nLocations = 90000;
 
         // TODO
 
@@ -153,7 +153,7 @@ public class Neighbours extends Application {
             for (int r = row - 1; r <= row + 1; r++) {
                 for (int c = col - 1; c <= col + 1; c++) {
                     if (isValidLocation(world, r, c) && !(r == row && c == col)) {
-                        if (world[r][c] == Actor.BLUE) {
+                        if (world[r][c] == Actor.BLUE ) {                               //|| world[r][c] == Actor.NONE
                             count++;
                         }
                     }
@@ -165,7 +165,7 @@ public class Neighbours extends Application {
 
 
     int isOtherColor(Actor[][] world, int row, int col) {          //hårig kod
-    int count = 0;
+        int count = 0;
         if (world[row][col] == Actor.RED) {
             for (int r = row - 1; r <= row + 1; r++) {
                 for (int c = col - 1; c <= col + 1; c++) {
@@ -182,7 +182,7 @@ public class Neighbours extends Application {
                 for (int c = col - 1; c <= col + 1; c++) {
                     if (isValidLocation(world, r, c) && !(r == row && c == col)) {
                         if (world[r][c] == Actor.RED) {
-                        count++;
+                            count++;
                         }
                     }
                 }
@@ -266,22 +266,24 @@ public class Neighbours extends Application {
     }*/
 
     State unSatisfied(Actor[][] world, int row, int col, double threshold){
-        double percSat = threshold * aroundYou(world, row, col);
+        double percSat = (threshold * (isOtherColor(world, row, col) + getSatisfaction(world, row, col)));              //rundar ner atm
         State s = State.UNSATISFIED;
         if (isOtherColor(world, row, col) > 0){
             if (getSatisfaction(world, row, col) >= percSat){
                 s = State.SATISFIED;
             }
         }
-        else {
+        else if (isOtherColor(world, row, col) == 0){
             s = State.SATISFIED;
+        } else {
+            s = State.NA;
         }
         return s;
     }
 
 
 
-    int aroundYou(Actor[][] world, int row, int col) {
+    /*int aroundYou(Actor[][] world, int row, int col) {
         int count = 0;
         for (int r = row - 1; r <= row + 1; r++) {
             for (int c = col - 1; c <= col + 1; c++) {
@@ -310,7 +312,7 @@ public class Neighbours extends Application {
     boolean aroundNone(Actor[][] world, int row, int col){
         return aroundYou(world, row, col) == isAllNone(world, row, col);
     }
-
+*/
     /*
                                 Satisfaction
                                        |
@@ -346,7 +348,7 @@ public class Neighbours extends Application {
         //out.println(Arrays.toString(world2[2]));
         //out.println(Arrays.toString(world2[3]));
         // TODO test methods
-        out.println(aroundNone(testWorld, 0, 0));
+        //out.println(aroundNone(testWorld, 0, 0));
         //out.println(aroundYou(testWorld, 1, 1));
 
         exit(0);
@@ -369,7 +371,7 @@ public class Neighbours extends Application {
     double width = 400;   // Size for window
     double height = 400;
     long previousTime = nanoTime();
-    final long interval = 950000000;
+    final long interval = 95000000;
     double dotSize;
     final double margin = 50;
 
